@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Illustrator Extension</title>
+
+    <!-- Load CSInterface -->
+    <script src="CSInterface.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (typeof CSInterface === "undefined") {
+                alert("❌ CSInterface is NOT loaded.");
+                return;
+            }
+
+            const csInterface = new CSInterface();
+
+            function runIllustratorScript() {
+                let numberToSend = 1234;
+                var uploadUrl = "https://testing.jog-joinourgame.com/uploadAPI.php";
+
+                csInterface.evalScript('main(' + numberToSend + ')', function (result) {
+                    if (result === "EvalScript error.") {
+                        alert("❌ evalScript Error: Check JSX file path or syntax!");
+                        return;
+                    }
+
+                    try {
+                        alert(result);
+                        // let [filePath, base64Data] = result.split("::"); // Get file path and Base64 data
+                        // if (!base64Data) throw new Error("Base64 data missing!");
+
+                        // let byteCharacters = atob(base64Data); // Decode Base64
+                        // let byteNumbers = new Array(byteCharacters.length);
+                        // for (let i = 0; i < byteCharacters.length; i++) {
+                        //     byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        // }
+                        // let byteArray = new Uint8Array(byteNumbers);
+                        // let file = new File([byteArray], filePath.split('/').pop(), { type: "application/octet-stream" });
+                        alert(result);
+                        var formData = new FormData();
+                        formData.append("file", result);
+
+                        fetch(uploadUrl, {
+                            method: "POST",
+                            body: formData
+                        })
+                            .then(response => response.text())
+                            .then(data => {
+                                alert("✅ Upload Successful: " + data);
+                            })
+                            .catch(error => {
+                                alert("❌ Upload Error: " + error);
+                            });
+
+                    } catch (e) {
+                        alert("❌ Error processing file: " + e.message);
+                    }
+                });
+            }
+
+
+            function callAPI() {
+                var apiUrl = "https://testing.jog-joinourgame.com/testAPI.php";
+
+                csInterface.evalScript('getDocName()', function (result) {
+                    if (typeof result === "string" && result.includes("Error")) {
+                        alert("❌ Error: " + result);
+                        return;
+                    }
+
+                    fetch(apiUrl)
+                        .then(response => response.text())
+                        .then(data => {
+                            alert("✅ API Response: " + data);
+                        })
+                        .catch(error => {
+                            alert("❌ API Error: " + error);
+                        });
+                });
+            }
+
+
+            document.getElementById("runScriptBtn").addEventListener("click", runIllustratorScript);
+            document.getElementById("callApiBtn").addEventListener("click", callAPI);
+        });
+    </script>
+</head>
+
+<body>
+    <h1>Illustrator Extension</h1>
+    <button id="runScriptBtn">Run JSX Script</button>
+    <button id="callApiBtn">Call API</button>
+</body>
+
+</html>

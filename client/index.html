@@ -271,10 +271,10 @@
                         body: JSON.stringify(rawData)
                     });
 
-                 //   if (!uploadResponse) {
+                    if (!uploadResponse) {
                         deleteFiles(filePaths);
                         return; // Stop execution if error or invalid session
-                   // }
+                    }
 
                     alert("✅ Files have been sent to the server.");
                 } catch (e) {

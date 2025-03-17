@@ -309,10 +309,13 @@ function saveDocAsEPS(doc, file) {
 // Function to check if barcodes have already been generated
 function checkIfBarcodesGenerated(layer) {
     var hasGenerated = false;
-    for (var i = 0; i < layer.layers.length; i++) {
+    alert("Checking barcode generated : ");
+    try{for (var i = 0; i < layer.layers.length; i++) {
         if (layer.layers[i].name.includes(barcodeKey)) {
             hasGenerated =  true;
         }
+    }}catch(e){
+        alert("Error is:  " + e);
     }
     alert("Bar code status : " + hasGenerated);
     return hasGenerated;
@@ -491,7 +494,7 @@ function removeAllBarcodes() {
 function removeBarcodeLayers(layer) {
     for (var i = layer.layers.length - 1; i >= 0; i--) {
         var subLayer = layer.layers[i];
-        if (subLayer.name.indexOf("Barcode") !== -1) {
+        if (subLayer.name.indexOf(barcodeKey) !== -1) {
             subLayer.remove();
         } else {
             removeBarcodeLayers(subLayer); // Recursively check sublayers

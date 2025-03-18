@@ -213,6 +213,7 @@
                 alert("❌ No active document found.");
                 return;
             }
+            if(result === "error") return;// check for error
 
             var values = result.split(",");
             var selectedLayer = values[2];
@@ -249,8 +250,8 @@
                 if (result === "EvalScript error.") {
                     alert("❌ evalScript Error: Check JSX file path or syntax!");
                     return;
-                }
-
+                } 
+                if(result === "error") return;/// for error response
                 try {
                     var codesItems = barcodes.split(",");
                     var filePaths = result.split(",");

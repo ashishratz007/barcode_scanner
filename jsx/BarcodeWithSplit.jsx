@@ -28,9 +28,9 @@ function main(barcodeData, layername) {
     }
 
     // Check if barcodes have already been generated
-    if (checkIfBarcodesGenerated(mainLayer)) {
+    if (checkForBarcode()) {
         alert("Barcodes already generated! Delete all barcode Layers to regenerate.");
-        return;
+        return "error";
     }
 
     var objects = [];
@@ -183,6 +183,30 @@ function markBarcodesGenerated(layer) {
     markerLayer.name = barcodeKey;
 }
 
+// function to check if barcod exits
+function checkForBarcode() {
+    var doc = app.activeDocument;
+    var mainLayer = getMainLayer(doc);
+    if (!mainLayer) return;
+    for (var i = 0; i < doc.layers.length; i++) {
+        return checkBarcodeInLayers(doc.layers[i]);
+    }
+    
+}
+
+// filter every layers for barcode key
+function checkBarcodeInLayers(layer) {
+    for (var i = layer.layers.length - 1; i >= 0; i--) {
+        var subLayer = layer.layers[i];
+        if (subLayer.name.indexOf(barcodeKey) !== -1) {
+            return true;
+        } else {
+            checkBarcodeInLayers(subLayer); // Recursively check sublayers
+        }
+    }
+    return false;
+}
+
 
 // Function to find all objects inside layers
 function findObjects(layer, objects) {
@@ -306,22 +330,6 @@ function saveDocAsEPS(doc, file) {
     }
 }
 
-// Function to check if barcodes have already been generated
-function checkIfBarcodesGenerated(layer) {
-    var hasGenerated = false;
-    alert("Checking barcode generated : ");
-    try{for (var i = 0; i < layer.layers.length; i++) {
-        if (layer.layers[i].name.includes(barcodeKey)) {
-            hasGenerated =  true;
-        }
-    }}catch(e){
-        alert("Error is:  " + e);
-    }
-    alert("Bar code status : " + hasGenerated);
-    return hasGenerated;
-}
-
-
 
 function getDocName() {
     if (!app.documents.length) {
@@ -330,6 +338,11 @@ function getDocName() {
 
     var doc = app.activeDocument;
     var data = getObjectCount(doc);
+        // Check if barcodes have already been generated
+        if (checkForBarcode()) {
+            alert("Barcodes already generated! Delete all barcode Layers to regenerate.");
+            return "error";
+        }
     /// data contains layerLength and the selected layer name 
     return [doc.name, data[0], data[1]]; // Returning an array
 }

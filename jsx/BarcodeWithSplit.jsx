@@ -223,6 +223,79 @@ function findObjects(layer, objects) {
     }
 }
 
+// Barcode
+function generateEAN13Barcode(ean, x, y, width, height, textPadding, barcodeLayer) {
+    var doc = app.activeDocument;
+    var fontName = "OCRBStd";
+
+    // Error handling for invalid EAN-13
+    if (!ean.match(/^\d{13}$/)) {
+        alert("Invalid EAN-13 number. It must be exactly 13 digits.");
+        return;
+    }
+
+    // Calculate the correct checksum
+    var correctChecksum = CheckDigit(ean);
+    if (correctChecksum != ean[12]) {
+        alert("The barcode " + ean + " does not have the right checksum. The checksum digit must be " + correctChecksum);
+        throw Error("The barcode " + ean + " does not have the right checksum. The checksum digit must be " + correctChecksum);
+        // ean = ean.substring(0, 12) + correctChecksum; // Update the barcode with the correct checksum
+        // alert("The barcode has been corrected to: " + ean);
+    }
+
+    // Error handling for font availability
+    if (!fontAvailable(fontName)) {
+        alert("The font " + fontName + " is not available. Please install it and try again.");
+        return;
+    }
+
+    // Create the barcode group within the specified layer
+    var EANGroup = barcodeLayer.groupItems.add();
+    var barColor = make_cmyk(0, 0, 0, 100); // Black color
+
+    // Adjust width for correct fit
+    var block = width * 0.00346;
+    var blockHeightExtra = height * 1.07; // Height of barcode
+    var fontSize = block * 6; // Font size
+
+    var zX = x;
+    var zY = y;
+    var gapD = block * 7;
+
+    // Create a white background rectangle
+    var whiteRect = EANGroup.pathItems.rectangle(zY, zX - block * 10, block * 118, blockHeightExtra * 1.16);
+    whiteRect.stroked = false;
+    whiteRect.filled = true;
+    whiteRect.fillColor = make_cmyk(0, 0, 0, 0); // White color
+
+    // Create the barcode
+    var bcRenderObject = new bcRenderChar(zX, zY, block, blockHeightExtra, barColor, EANGroup, gapD);
+    bcRenderObject.draw("sep");
+    bcRenderObject.x += block * 4;
+    bcRenderObject.h = height;
+    bcRenderObject.drawLeft(ean.substring(0, 7));
+    bcRenderObject.draw("sep");
+    bcRenderObject.x += block * 5;
+    bcRenderObject.h = height;
+
+    for (var j = 7; j < 12; j++) {
+        bcRenderObject.draw(ean[j]);
+        bcRenderObject.x += gapD;
+    }
+    bcRenderObject.draw(ean[12]);
+    bcRenderObject.x += block * 3;
+    bcRenderObject.h = blockHeightExtra;
+    bcRenderObject.draw("sep");
+
+    // Add the EAN-13 text below the barcode
+    var topPos = y - height * 1.03 - textPadding;
+    // pointText(EANGroup, fontSize, ean.charAt(0), topPos, x + block - block * 4, fontName, 1);
+    // pointText(EANGroup, fontSize, ean.substring(1, 7), topPos, x + block + block * 2, fontName, 1);
+    pointText(EANGroup, fontSize, ean, topPos, x + (block + block) , fontName, 1);
+
+    return EANGroup;
+}
+
 // Helper functions
 // Barcode
 function fontAvailable(myName) {

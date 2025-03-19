@@ -1,6 +1,7 @@
 
 /// global keys
 var barcodeKey = "Barcode";
+
 // Main function to handle barcode generation, object duplication, and EPS export
 function main(barcodeData, layername) {
     var files = [];
@@ -76,7 +77,7 @@ function main(barcodeData, layername) {
             var objectLayer = obj.layer;
             var barcodeLayer = objectLayer.layers.add();
             barcodeLayer.name = barcodeKey + " " + (i + 1);
-            draw12DigitBarcode(fullEAN, barcodeX, barcodeY, barcodeWidth, 60, 70, barcodeLayer);
+            generateEAN13Barcode(fullEAN, barcodeX, barcodeY, barcodeWidth, 30, 5, barcodeLayer);
         }
         // **2. Create a new document with the same artboard size as the original document**
         var originalArtboard = doc.artboards[0]; // Assuming there's only one artboard
@@ -110,7 +111,7 @@ function main(barcodeData, layername) {
             var objectLayer = copiedObject.layer;
             var barcodeLayer = objectLayer.layers.add();
             barcodeLayer.name = barcodeKey + " " + (i + 1);
-            draw12DigitBarcode(fullEAN, barcodeX, barcodeY, barcodeWidth, 60, 70, barcodeLayer);
+            generateEAN13Barcode(fullEAN, barcodeX, barcodeY, barcodeWidth, 60, 70, barcodeLayer);
         }
         // **5. Export the EPS file**
         var filePath = new File(exportFolder.fsName + "/" + fullEAN + ".eps");
@@ -222,98 +223,138 @@ function findObjects(layer, objects) {
     }
 }
 
-
-// Function to Draw 12-Digit Barcode
-function draw12DigitBarcode(ean, x, y, width, height, textPadding, barcodeLayer) {
-    if (ean.length !== 12) {
-        alert("EAN must be 12 digits long.");
-        return;
+// Helper functions
+// Barcode
+function fontAvailable(myName) {
+    try {
+        var myFont = textFonts.getByName(myName);
+        return true;
+    } catch (e) {
+        return false;
     }
-
-    var doc = app.activeDocument;
-    var moduleWidth = width / 95; // Scale barcode width to keep proportions
-    var moduleHeight = height;
-
-    // Create black fill color
-    var blackColor = new CMYKColor();
-    blackColor.black = 100; // Full black
-
-    // Left-hand patterns (for first 6 digits)
-    var leftPatterns = {
-        "0": "0001101", "1": "0011001", "2": "0010011", "3": "0111101", "4": "0100011",
-        "5": "0110001", "6": "0101111", "7": "0111011", "8": "0110111", "9": "0001011"
-    };
-
-    // Right-hand patterns (for last 6 digits)
-    var rightPatterns = {
-        "0": "1110010", "1": "1100110", "2": "1101100", "3": "1000010", "4": "1011100",
-        "5": "1001110", "6": "1010000", "7": "1000100", "8": "1001000", "9": "1110100"
-    };
-
-    // Guard and center patterns
-    var guard = "101";
-    var center = "01010";
-
-    var startX = x;
-
-    // Draw start guard
-    drawBars(guard, startX, y, moduleWidth, moduleHeight, blackColor, barcodeLayer);
-    startX += guard.length * moduleWidth;
-
-    // Draw first 6 digits (left-hand patterns)
-    for (var i = 0; i < 6; i++) {
-        var digit = ean[i];
-        var pattern = leftPatterns[digit];
-        if (!pattern) {
-            alert("Invalid digit in EAN: " + digit);
-            return;
-        }
-        drawBars(pattern, startX, y, moduleWidth, moduleHeight, blackColor, barcodeLayer);
-        startX += 7 * moduleWidth;
-    }
-
-    // Draw center guard
-    drawBars(center, startX, y, moduleWidth, moduleHeight, blackColor, barcodeLayer);
-    startX += center.length * moduleWidth;
-
-    // Draw last 6 digits (right-hand patterns)
-    for (var i = 6; i < 12; i++) {
-        var digit = ean[i];
-        var pattern = rightPatterns[digit];
-        if (!pattern) {
-            alert("Invalid digit in EAN: " + digit);
-            return;
-        }
-        drawBars(pattern, startX, y, moduleWidth, moduleHeight, blackColor, barcodeLayer);
-        startX += 7 * moduleWidth;
-    }
-
-    // Draw end guard
-    drawBars(guard, startX, y, moduleWidth, moduleHeight, blackColor, barcodeLayer);
-
-    // Add barcode number below barcode with padding
-    var text = barcodeLayer.textFrames.add();
-    text.contents = ean; // Display the 12-digit EAN
-    text.textRange.characterAttributes.size = 14;
-    text.textRange.characterAttributes.fillColor = blackColor; // Make text black
-
-    // Center align text below barcode
-    var textX = x + (width / 2) - (text.width / 2); // Center horizontally
-    var textY = y - textPadding; // Padding below barcode
-    text.position = [textX, textY];
 }
-
-// Function to Draw Bars with Proper Thickness and Filled Black Color
-function drawBars(binary, x, y, width, height, blackColor, barcodeLayer) {
-    var doc = app.activeDocument;
-    for (var i = 0; i < binary.length; i++) {
-        if (binary[i] === "1") {
-            var rect = barcodeLayer.pathItems.rectangle(y, x + (i * width), width, height);
-            rect.filled = true;
-            rect.fillColor = blackColor; // Fill bars in black
-            rect.stroked = false; // No stroke
-        }
+// Barcode
+function make_cmyk(c, m, y, k) {
+    var colorRef = new CMYKColor();
+    colorRef.cyan = c;
+    colorRef.magenta = m;
+    colorRef.yellow = y;
+    colorRef.black = k;
+    return colorRef;
+}
+// Barcode
+function CheckDigit(myCode) {
+    var mySum = 0;
+    for (var j = 0; j < myCode.length - 1; j = j + 1) {
+        var weight = (j % 2 == 0) ? 1 : 3;
+        var myNumber = myCode[j] * weight;
+        mySum += myNumber;
     }
+    var checkDigit = Math.ceil(mySum / 10) * 10 - mySum;
+    return checkDigit;
+}
+// Barcode
+function pointText(Group, fontSize, charNr, topPos, leftPos, fontName, fontScale) {
+    var pointTextRef = Group.textFrames.add();
+    pointTextRef.textRange.size = fontSize;
+    pointTextRef.contents = charNr;
+    pointTextRef.position = [leftPos, topPos];
+    pointTextRef.textRange.characterAttributes.textFont = textFonts.getByName(fontName);
+    pointTextRef.textRange.characterAttributes.size = pointTextRef.textRange.characterAttributes.size * fontScale;
+    return pointTextRef;
+}
+// Barcode
+// Barcode rendering class
+function bcRenderChar(x, y, w, h, col, gr, gapD) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.col = col;
+    this.gr = gr;
+    this.gapD = gapD;
+
+    this.L = {
+        "0": [3, 2, 6, 1],
+        "1": [2, 2, 6, 1],
+        "2": [2, 1, 5, 2],
+        "3": [1, 4, 6, 1],
+        "4": [1, 1, 5, 2],
+        "5": [1, 2, 6, 1],
+        "6": [1, 1, 3, 4],
+        "7": [1, 3, 5, 2],
+        "8": [1, 2, 4, 3],
+        "9": [3, 1, 5, 2]
+    };
+
+    this.G = {
+        "0": [1, 1, 4, 3],
+        "1": [1, 2, 5, 2],
+        "2": [2, 2, 5, 2],
+        "3": [1, 1, 6, 1],
+        "4": [2, 3, 6, 1],
+        "5": [1, 3, 6, 1],
+        "6": [4, 1, 6, 1],
+        "7": [2, 1, 6, 1],
+        "8": [3, 1, 6, 1],
+        "9": [2, 1, 4, 3]
+    };
+
+    this.dictL = {
+        "0": "LLLLLL",
+        "1": "LLGLGG",
+        "2": "LLGGLG",
+        "3": "LLGGGL",
+        "4": "LGLLGG",
+        "5": "LGGLLG",
+        "6": "LGGGLL",
+        "7": "LGLGLG",
+        "8": "LGLGGL",
+        "9": "LGGLGL"
+    };
+
+    this.dictR = {
+        "sep": [1, 1, 3, 1],
+        "0": [0, 3, 5, 1],
+        "1": [0, 2, 4, 2],
+        "2": [0, 2, 3, 2],
+        "3": [0, 1, 5, 1],
+        "4": [0, 1, 2, 3],
+        "5": [0, 1, 3, 3],
+        "6": [0, 1, 2, 1],
+        "7": [0, 1, 4, 1],
+        "8": [0, 1, 3, 1],
+        "9": [0, 3, 4, 1]
+    };
+
+    this.drawLeft = function (content) {
+        var mySeq = this.dictL[content[0]];
+        for (var i = 1; i < content.length; i++) {
+            var myLG = mySeq[i - 1];
+            var parameters = (myLG == "L") ? this.L[content[i]] : this.G[content[i]];
+            rect = this.gr.pathItems.rectangle(this.y, this.x + this.w * parameters[0], this.w * parameters[1], this.h);
+            rect.stroked = false;
+            rect.filled = true;
+            rect.fillColor = this.col;
+            rect = this.gr.pathItems.rectangle(this.y, this.x + this.w * parameters[2], this.w * parameters[3], this.h);
+            rect.stroked = false;
+            rect.filled = true;
+            rect.fillColor = this.col;
+            this.x += this.gapD;
+        }
+    };
+
+    this.draw = function (textChar) {
+        var parameters = this.dictR[textChar];
+        rect = this.gr.pathItems.rectangle(this.y, this.x + this.w * parameters[0], this.w * parameters[1], this.h);
+        rect.stroked = false;
+        rect.filled = true;
+        rect.fillColor = this.col;
+        rect = this.gr.pathItems.rectangle(this.y, this.x + this.w * parameters[2], this.w * parameters[3], this.h);
+        rect.stroked = false;
+        rect.filled = true;
+        rect.fillColor = this.col;
+    };
 }
 
 // Function to save as EPS

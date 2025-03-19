@@ -1,13 +1,13 @@
-{
+
+  {
     "version": "0.2.0",
     "configurations": [
-      {
-        "type": "extendscript-debug",
-        "request": "launch",
-        "name": "Debug Illustrator Script",
-        "program": "${workspaceFolder}/BarcodeWithSplit.jsx",
-        "hostAppSpecifier": "illustrator"
-      }
+        {
+            "type": "extendscript-debug",
+            "request": "launch",
+            "name": "Attach to ExtendScript Engine",
+            "script": "${workspaceFolder}/BarcodeGenerator/BarcodeWithSplit.jsx",
+            "trace": true,
+        }
     ]
-  }
-  
+}

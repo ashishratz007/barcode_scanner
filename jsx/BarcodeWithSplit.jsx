@@ -116,7 +116,7 @@ function main(barcodeData, layername) {
         // **5. Export the EPS file**
         var filePath = new File(exportFolder.fsName + "/" + fullEAN + ".eps");
         saveDocAsEPS(newDoc, filePath);
-
+        toPNG(newDoc);
         // Close the new document without saving
         files.push(exportFolder.fsName + "/" + fullEAN + ".eps");
         newDoc.close(SaveOptions.DONOTSAVECHANGES);
@@ -821,3 +821,58 @@ function getBarcodeData() {
         'Silent Zone': { value: 0, bin: '0000000000' }
     };
 }
+
+
+function toPNG(doc){ 
+  // Extract clean file name (remove extension)
+    var fileName = doc.name.replace(/\.[^.]+$/, ""); 
+
+    // Replace "-[Converted]" with "_img"
+    fileName = fileName.replace(/-\[Converted\]$/, "_img"); 
+
+    // Define export path (use document path or fallback to Desktop)
+    var outputPath;
+    if (doc.fullName && doc.fullName.parent) {
+        outputPath = doc.fullName.parent.fsName; // Get document's folder
+    } else {
+        outputPath = Folder.desktop.fsName; // Use Desktop if unsaved
+        alert("⚠️ Document is unsaved. Exporting to Desktop.");
+    }
+
+    var outputFile = new File(outputPath + "/" + fileName + ".png");
+
+    var exportOptions = new ExportOptionsPNG24();
+    exportOptions.antiAliasing = true;
+    exportOptions.transparency = true;
+    exportOptions.artBoardClipping = false;
+    exportOptions.horizontalScale = 100;
+    exportOptions.verticalScale = 100;
+
+    try {
+        alert("📤 Exporting PNG to: " + outputFile.fsName);
+        doc.exportFile(outputFile, ExportType.PNG24, exportOptions);
+
+        // 🕒 Wait for file to be created and stabilize in size
+        var maxWaitTime = 10000; // 10 seconds
+        var waitInterval = 500;
+        var elapsedTime = 0;
+        var lastSize = -1;
+
+        while (elapsedTime < maxWaitTime) {
+            $.sleep(waitInterval);
+            elapsedTime += waitInterval;
+            outputFile = new File(outputPath + "/" + fileName + ".png"); // Reload file
+
+            if (outputFile.exists) {
+                var currentSize = outputFile.length;
+                if (currentSize > 0 && currentSize === lastSize) {
+                    break; // File size stabilized
+                }
+                lastSize = currentSize;
+            }
+        }
+    } catch (e) {
+        alert("❌ Export failed: " + e.message);
+    }
+
+} 

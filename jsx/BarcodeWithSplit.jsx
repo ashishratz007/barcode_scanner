@@ -1,6 +1,7 @@
 
 /// global keys
 var barcodeKey = "Barcode";
+var selectedMainLayer;
 
 // Main function to handle barcode generation, object duplication, and EPS export
 function main(barcodeData, layername) {
@@ -23,6 +24,7 @@ function main(barcodeData, layername) {
 
     try {
         mainLayer = layers.getByName(layername);
+        selectedMainLayer = mainLayer;
     } catch (e) {
         alert("Layer '" + layername + "' not found!");
         return;
@@ -126,7 +128,11 @@ function main(barcodeData, layername) {
     return (files);
 }
 
+
 function getMainLayer(doc) {
+    if(selectedMainLayer != null){
+        retrun selectedMainLayer;
+    }
     var layers = doc.layers;
     var mainLayer;
     /// check for the multiple layers 
@@ -163,6 +169,7 @@ function getMainLayer(doc) {
         // If only one layer, select it automatically
         mainLayer = layers[0];
     }
+    selectedMainLayer = mainLayer;
     return mainLayer;
 
 }

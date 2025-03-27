@@ -131,7 +131,7 @@ function main(barcodeData, layername) {
 
 function getMainLayer(doc) {
     if(selectedMainLayer != null){
-        retrun selectedMainLayer;
+        return selectedMainLayer;
     }
     var layers = doc.layers;
     var mainLayer;

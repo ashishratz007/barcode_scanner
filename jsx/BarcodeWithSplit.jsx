@@ -831,87 +831,91 @@ function getBarcodeData() {
 
 
 function toPNG(doc) {
-    // Extract clean file name (remove extension)
-    var fileName = doc.name.replace(/\.[^.]+$/, ""); 
+    // Create progress window
+    var win = new Window('window', 'Exporting PNG', undefined, {closeable: false});
+    win.orientation = 'column';
+    win.alignChildren = 'center';
+    win.margins = 20;
+    
+    // Title
+    var title = win.add('statictext', undefined, '🖌️ Exporting PNG');
+    title.graphics.font = ScriptUI.newFont("Helvetica", "BOLD", 16);
+    
+    // Progress bar group
+    var progressGroup = win.add('group');
+    progressGroup.orientation = 'row';
+    progressGroup.alignChildren = 'center';
+    progressGroup.spacing = 10;
+    
+    // Correct progressbar implementation
+    var progressBar = progressGroup.add('progressbar', undefined, 0, 100);
+    progressBar.preferredSize = [250, 20];
+    
+    // Percentage text
+    var percentText = progressGroup.add('statictext', undefined, '0%');
+    percentText.graphics.font = ScriptUI.newFont("Helvetica", "BOLD", 14);
+    
+    // Status message
+    var statusText = win.add('statictext', undefined, 'Starting export...');
+    
+    win.center();
+    win.show();
 
-    // Replace "-[Converted]" with "_img"
-    fileName = fileName.replace(/-\[Converted\]$/, "_img"); 
-
-    // Define export path (use document path or fallback to Desktop)
-    var outputPath;
-    if (doc.fullName && doc.fullName.parent) {
-        outputPath = doc.fullName.parent.fsName; // Get document's folder
-    } else {
-        outputPath = Folder.desktop.fsName; // Use Desktop if unsaved
-        // alert("⚠️ Document is unsaved. Exporting to Desktop.");
-    }
-
+    // File handling
+    var fileName = doc.name.replace(/\.[^.]+$/, "").replace(/-\[Converted\]$/, "_img");
+    var outputPath = doc.fullName && doc.fullName.parent ? doc.fullName.parent.fsName : Folder.desktop.fsName;
     var outputFile = new File(outputPath + "/" + fileName + ".png");
 
-    // Compression settings
-    var maxFileSizeKB = 100; // Target max size (KB)
-    var minScale = 20; // Minimum scale (%) to avoid extreme downscaling
-    var currentScale = 100; // Start at 100% scale
+    // Update progress function
+    function updateProgress(percent, message) {
+        progressBar.value = percent;
+        percentText.text = percent + '%';
+        statusText.text = message;
+        win.update();
+    }
 
-    var exportOptions = new ExportOptionsPNG24();
-    exportOptions.antiAliasing = true;
-    exportOptions.transparency = true;
-    exportOptions.artBoardClipping = false;
-
-    var success = false;
-
-    // Try exporting at progressively lower scales until under 100KB
-    while (currentScale >= minScale) {
-        exportOptions.horizontalScale = currentScale;
-        exportOptions.verticalScale = currentScale;
-
-        try {
-            doc.exportFile(outputFile, ExportType.PNG24, exportOptions);
-
-            // Wait for file to stabilize
-            waitForFile(outputFile);
-
-            // Check file size
-            var fileSizeKB = outputFile.length / 1024;
-            
-            if (fileSizeKB <= maxFileSizeKB) {
-                success = true;
-                // alert("✅ Success! Exported PNG at " + currentScale + "% scale (" + Math.round(fileSizeKB) + "KB)");
-                break;
-            } else {
-                // Reduce scale for next attempt
-                currentScale -= 20; // Decrease by 20% each try
-                // alert("⚠️ File too large (" + Math.round(fileSizeKB) + "KB). Retrying at " + currentScale + "% scale...");
-            }
-        } catch (e) {
-            // alert("❌ Export failed: " + e.message);
-            break;
+    try {
+        // Simulate preparation (0-30%)
+        for (var i = 0; i <= 30; i++) {
+            updateProgress(i, 'Preparing document...');
+            $.sleep(20);
         }
-    }
 
-    if (!success) {
-        // alert("❌ Could not compress below 100KB (minimum scale reached: " + currentScale + "%)");
+        // Actual export (30-70%)
+        var exportOptions = new ExportOptionsPNG24();
+        exportOptions.antiAliasing = true;
+        exportOptions.transparency = true;
+        doc.exportFile(outputFile, ExportType.PNG24, exportOptions);
+        
+        for (var i = 31; i <= 70; i++) {
+            updateProgress(i, 'Exporting image data...');
+            $.sleep(10);
+        }
+
+        // Finalizing (70-100%)
+        waitForFile(outputFile);
+        for (var i = 71; i <= 100; i++) {
+            updateProgress(i, 'Finalizing export...');
+            $.sleep(5);
+        }
+
+        // Completion
+        updateProgress(100, '✅ Export completed!');
+        $.sleep(1000);
+        
+    } catch (e) {
+        updateProgress(100, '❌ Error: ' + e.message);
+        $.sleep(2000);
     }
+    
+    win.close();
 }
 
-// Helper: Wait for file to stabilize
 function waitForFile(file) {
-    var maxWaitTime = 10000; // 10 seconds max
-    var waitInterval = 500; // Check every 0.5s
-    var elapsedTime = 0;
-    var lastSize = -1;
-
-    while (elapsedTime < maxWaitTime) {
-        $.sleep(waitInterval);
-        elapsedTime += waitInterval;
-        file = new File(file.fsName); // Refresh file reference
-
-        if (file.exists) {
-            var currentSize = file.length;
-            if (currentSize > 0 && currentSize === lastSize) {
-                break; // File size stabilized
-            }
-            lastSize = currentSize;
-        }
+    var startTime = new Date().getTime();
+    while ((new Date().getTime() - startTime) < 3000) {
+        if (file.exists && file.length > 0) return true;
+        $.sleep(200);
     }
+    return false;
 }

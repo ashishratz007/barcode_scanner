@@ -191,30 +191,40 @@ function markBarcodesGenerated(layer) {
     markerLayer.name = barcodeKey;
 }
 
-// function to check if barcod exits
 function checkForBarcode() {
     var doc = app.activeDocument;
-    var mainLayer = getMainLayer(doc);
-    if (!mainLayer) return;
+    // Check all layers in the document recursively
     for (var i = 0; i < doc.layers.length; i++) {
-        return checkBarcodeInLayers(doc.layers[i]);
-    }
-    
-}
-
-// filter every layers for barcode key
-function checkBarcodeInLayers(layer) {
-    for (var i = layer.layers.length - 1; i >= 0; i--) {
-        var subLayer = layer.layers[i];
-        if (subLayer.name.indexOf(barcodeKey) !== -1) {
+        if (checkBarcodeInLayers(doc.layers[i])) {
             return true;
-        } else {
-            checkBarcodeInLayers(subLayer); // Recursively check sublayers
         }
     }
     return false;
 }
 
+function checkBarcodeInLayers(layer) {
+    // First check if this layer itself has the barcode key in its name
+    if (layer.name.indexOf(barcodeKey) !== -1) {
+        return true;
+    }
+    
+    // Then check all sublayers recursively
+    for (var i = 0; i < layer.layers.length; i++) {
+        if (checkBarcodeInLayers(layer.layers[i])) {
+            return true;
+        }
+    }
+    
+    // Finally check all page items in this layer
+    for (var j = 0; j < layer.pageItems.length; j++) {
+        var item = layer.pageItems[j];
+        if (item.userData && item.userData.barcode) {
+            return true;
+        }
+    }
+    
+    return false;
+}
 
 // Function to find all objects inside layers
 function findObjects(layer, objects) {

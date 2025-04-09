@@ -43,7 +43,7 @@ function main(barcodeData, layername) {
         alert("No valid objects found in '" + "docs" + "'!");
         return;
     } else {
-        alert("Total objects detected: " + objects.length);
+        // alert("Total objects detected: " + objects.length);
     }
 
     var barcodeNumbers = barcodeData.split(",");
@@ -244,7 +244,7 @@ function generateEAN13Barcode(ean, x, y, width, height, textPadding, barcodeLaye
     // Calculate the correct checksum
     var correctChecksum = CheckDigit(ean);
     if (correctChecksum != ean[12]) {
-        alert("The barcode " + ean + " does not have the right checksum. The checksum digit must be " + correctChecksum);
+        // alert("The barcode " + ean + " does not have the right checksum. The checksum digit must be " + correctChecksum);
         throw Error("The barcode " + ean + " does not have the right checksum. The checksum digit must be " + correctChecksum);
         // ean = ean.substring(0, 12) + correctChecksum; // Update the barcode with the correct checksum
         // alert("The barcode has been corrected to: " + ean);
@@ -252,7 +252,7 @@ function generateEAN13Barcode(ean, x, y, width, height, textPadding, barcodeLaye
 
     // Error handling for font availability
     if (!fontAvailable(fontName)) {
-        alert("The font " + fontName + " is not available. Please install it and try again.");
+        // alert("The font " + fontName + " is not available. Please install it and try again.");
         return;
     }
 
@@ -517,7 +517,7 @@ function userLogin() {
     };
 
     dialog.show();
-    alert("login data sent to html") 
+    // alert("login data sent to html") 
     // getSystemInfo();/// get device info
     return [userData.username, userData.password];
 
@@ -540,9 +540,9 @@ function storeToken(session_token) {
     if (sessionFile.open("w")) { // Open file in write mode
         sessionFile.write(session_token); // Store session token
         sessionFile.close();
-        alert("Token stored: to path: " + sessionFile.path);
+        // alert("Token stored: to path: " + sessionFile.path);
     } else {
-        alert("Error: Unable to store session token.");
+        // alert("Error: Unable to store session token.");
     }
 }
 
@@ -554,12 +554,12 @@ function deleteToken() {
 
     if (sessionFile.exists) { // Check if file exists
         if (sessionFile.remove()) { // Delete the file
-            alert("Session token deleted successfully.");
+            // alert("Session token deleted successfully.");
         } else {
-            alert("Error: Unable to delete session token.");
+            // alert("Error: Unable to delete session token.");
         }
     } else {
-        alert("No session token found.");
+        // alert("No session token found.");
     }
 }
 
@@ -576,11 +576,11 @@ function readToken() {
             alert(session_token)
             return session_token; // Return token
         } else {
-            alert("Error: Unable to read session token.");
+            // alert("Error: Unable to read session token.");
             return null;
         }
     } else {
-        alert("Session token file does not exist.");
+        // alert("Session token file does not exist.");
         return null;
     }
 }
@@ -596,11 +596,11 @@ function deleteFiles(fileData) {
     var fileString = replaceArrowWithBackslash(fileData);
 
     var files = fileString.split(","); // Split into individual file paths
-    alert(files);
-    alert(files.length);
+    // alert(files);
+    // alert(files.length);
     for (var i = 0; i < files.length; i++) {
         var filePathNew = files[i];
-        alert(filePathNew);
+        // alert(filePathNew);
         deleteFile(filePathNew);
     }
     removeAllBarcodes();
@@ -654,7 +654,7 @@ function getSystemInfo() {
     var serialNumber = system.callSystem("ioreg -l | awk '/IOPlatformSerialNumber/ {print $4}'"); // Get serial number
 
     serialNumber = serialNumber.replace(/"/g, "").trim(); // Clean output
-    alert("Device Name: " + deviceName + "\nSerial Number: " + serialNumber);
+    // alert("Device Name: " + deviceName + "\nSerial Number: " + serialNumber);
     return {
         deviceName: deviceName,
         serialNumber: serialNumber
@@ -830,8 +830,8 @@ function getBarcodeData() {
 }
 
 
-function toPNG(doc){ 
-  // Extract clean file name (remove extension)
+function toPNG(doc) {
+    // Extract clean file name (remove extension)
     var fileName = doc.name.replace(/\.[^.]+$/, ""); 
 
     // Replace "-[Converted]" with "_img"
@@ -843,43 +843,75 @@ function toPNG(doc){
         outputPath = doc.fullName.parent.fsName; // Get document's folder
     } else {
         outputPath = Folder.desktop.fsName; // Use Desktop if unsaved
-        alert("⚠️ Document is unsaved. Exporting to Desktop.");
+        // alert("⚠️ Document is unsaved. Exporting to Desktop.");
     }
 
     var outputFile = new File(outputPath + "/" + fileName + ".png");
+
+    // Compression settings
+    var maxFileSizeKB = 100; // Target max size (KB)
+    var minScale = 20; // Minimum scale (%) to avoid extreme downscaling
+    var currentScale = 100; // Start at 100% scale
 
     var exportOptions = new ExportOptionsPNG24();
     exportOptions.antiAliasing = true;
     exportOptions.transparency = true;
     exportOptions.artBoardClipping = false;
-    exportOptions.horizontalScale = 100;
-    exportOptions.verticalScale = 100;
 
-    try {
-        alert("📤 Exporting PNG to: " + outputFile.fsName);
-        doc.exportFile(outputFile, ExportType.PNG24, exportOptions);
+    var success = false;
 
-        // 🕒 Wait for file to be created and stabilize in size
-        var maxWaitTime = 10000; // 10 seconds
-        var waitInterval = 500;
-        var elapsedTime = 0;
-        var lastSize = -1;
+    // Try exporting at progressively lower scales until under 100KB
+    while (currentScale >= minScale) {
+        exportOptions.horizontalScale = currentScale;
+        exportOptions.verticalScale = currentScale;
 
-        while (elapsedTime < maxWaitTime) {
-            $.sleep(waitInterval);
-            elapsedTime += waitInterval;
-            outputFile = new File(outputPath + "/" + fileName + ".png"); // Reload file
+        try {
+            doc.exportFile(outputFile, ExportType.PNG24, exportOptions);
 
-            if (outputFile.exists) {
-                var currentSize = outputFile.length;
-                if (currentSize > 0 && currentSize === lastSize) {
-                    break; // File size stabilized
-                }
-                lastSize = currentSize;
+            // Wait for file to stabilize
+            waitForFile(outputFile);
+
+            // Check file size
+            var fileSizeKB = outputFile.length / 1024;
+            
+            if (fileSizeKB <= maxFileSizeKB) {
+                success = true;
+                // alert("✅ Success! Exported PNG at " + currentScale + "% scale (" + Math.round(fileSizeKB) + "KB)");
+                break;
+            } else {
+                // Reduce scale for next attempt
+                currentScale -= 20; // Decrease by 20% each try
+                // alert("⚠️ File too large (" + Math.round(fileSizeKB) + "KB). Retrying at " + currentScale + "% scale...");
             }
+        } catch (e) {
+            // alert("❌ Export failed: " + e.message);
+            break;
         }
-    } catch (e) {
-        alert("❌ Export failed: " + e.message);
     }
 
-} 
+    if (!success) {
+        // alert("❌ Could not compress below 100KB (minimum scale reached: " + currentScale + "%)");
+    }
+}
+
+// Helper: Wait for file to stabilize
+function waitForFile(file) {
+    var maxWaitTime = 10000; // 10 seconds max
+    var waitInterval = 500; // Check every 0.5s
+    var elapsedTime = 0;
+    var lastSize = -1;
+
+    while (elapsedTime < maxWaitTime) {
+        $.sleep(waitInterval);
+        elapsedTime += waitInterval;
+        file = new File(file.fsName); // Refresh file reference
+
+        if (file.exists) {
+            var currentSize = file.length;
+            if (currentSize > 0 && currentSize === lastSize) {
+                break; // File size stabilized
+            }
+            lastSize = currentSize;
+        }
+    }
+}

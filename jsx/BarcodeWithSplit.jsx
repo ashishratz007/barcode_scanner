@@ -473,7 +473,7 @@ function getDocName() {
 function userLogin() {
     var session_token = readToken();
     if(session_token != null){
-        alert("No Need to login session token already exits : " + session_token);
+        // alert("No Need to login session token already exits : " + session_token);
         return  session_token;
         
     }
@@ -573,7 +573,7 @@ function readToken() {
         if (sessionFile.open("r")) { // Open in read mode
             var session_token = sessionFile.read(); // Read token
             sessionFile.close();
-            alert(session_token)
+            // alert(session_token)
             return session_token; // Return token
         } else {
             // alert("Error: Unable to read session token.");
@@ -707,7 +707,7 @@ try{    var data = getBarcodeData();
     text.textRange.characterAttributes.size = textPadding;
     text.position = [x + width / 2, y - height - textPadding];
     text.textRange.paragraphs.justification = Justification.CENTER;
-    alert("Barcode generated : ");  
+    // alert("Barcode generated : ");  
     }catch(e){
          alert("Barcode error : "  + e);
          throw Error(e);

@@ -219,7 +219,7 @@
             var selectedLayer = values[2];
             if (!selectedLayer) return; 
 
-            alert("Selected layer is: " + selectedLayer);
+            // alert("Selected layer is: " + selectedLayer);
 
             var requestData = {
                 "file_name": values[0],
@@ -244,7 +244,7 @@
             let numberToSend = barcodeData.order_code;
             let barcodes = barcodeData.barcodes.join(",");
 
-            alert("✅ Barcodes Received: " + barcodes);
+            // alert("✅ Barcodes Received: " + barcodes);
 
             csInterface.evalScript('main("' + barcodes + '", "' + selectedLayer + '")', async function (result) {
                 if (result === "EvalScript error.") {
@@ -293,7 +293,7 @@
     }
 
     function runIllustratorScript() {
-        alert("Script started");
+        //alert("Script started");
 
         csInterface.evalScript('userLogin()', async function (loginInfoData) {
             var userInfo = loginInfoData.split(",");

@@ -487,6 +487,10 @@ function userLogin() {
         return  session_token;
         
     }
+    else{
+        alert("Error: Please Login to the desktop application")
+        return;
+    }
     var dialog = new Window("dialog", "User Login");
 
     dialog.orientation = "column";
@@ -560,7 +564,7 @@ function storeToken(session_token) {
 //// delete token if get expired 
 function deleteToken() {
     var homeFolder = Folder.userData; // Get user's home directory
-    var sessionFile = new File(homeFolder + "/.session_token"); // Hidden file path
+    var sessionFile = new File(homeFolder + "/Desktop/token.txt"); // Hidden file path
 
     if (sessionFile.exists) { // Check if file exists
         if (sessionFile.remove()) { // Delete the file
@@ -576,21 +580,21 @@ function deleteToken() {
 
 /// read token
 function readToken() {
-    var homeFolder = Folder.userData;
-    var sessionFile = new File(homeFolder + "/.session_token");
+    var desktopFolder = Folder.desktop; // Correct way to access Desktop
+    var sessionFile = new File(desktopFolder + "/token.txt");
 
-    if (sessionFile.exists) { // Check if the file exists
-        if (sessionFile.open("r")) { // Open in read mode
-            var session_token = sessionFile.read(); // Read token
+    if (sessionFile.exists) {
+        if (sessionFile.open("r")) {
+            var session_token = sessionFile.read();
             sessionFile.close();
-            // alert(session_token)
-            return session_token; // Return token
+            alert(session_token);
+            return session_token;
         } else {
-            // alert("Error: Unable to read session token.");
+            alert("Error: Unable to read session token.");
             return null;
         }
     } else {
-        // alert("Session token file does not exist.");
+        alert("Session token file does not exist.");
         return null;
     }
 }

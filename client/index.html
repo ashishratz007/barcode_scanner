@@ -170,166 +170,154 @@
     <script src="CSInterface.js"></script>
 
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-    if (typeof CSInterface === "undefined") {
-        alert("❌ CSInterface is NOT loaded.");
-        return;
-    }
-
-    var apiUrl = "https://jog-desktop.jog-joinourgame.com/generate_barcode.php";
-    var uploadUrl = "https://jog-desktop.jog-joinourgame.com/store_files.php";
-    var loginUrl = "https://jog-desktop.jog-joinourgame.com/login_adobe.php";
-
-    const csInterface = new CSInterface();
-
-    async function fetchWithErrorHandling(url, options) {
-        try {
-            let response = await fetch(url, options);
-            let data = await response.json();
-
-            // Check for invalid session and return immediately if detected
-            if (data.status === "error" && data.message === "Invalid session") {
-                csInterface.evalScript('deleteToken()', async function (result) {})
-                alert("❌ Error: " + data.message + "\nPlease log in again.");
-                
-                return null; // Stop execution
-            }
-
-            if (data.status === "error") {
-                alert("❌ Error: " + data.message + "\nPlease try again.");
-                return null; // Stop execution
-            }
-
-            return data;
-        } catch (error) {
-            alert("❌ Network Error: " + error.message + "\nPlease check your connection and try again.");
-            return null; // Stop execution
-        }
-    }
-
-    function generateBarcode(token) {
-        csInterface.evalScript('getDocName()', async function (result) {
-            if (result === "error: No active document found") {
-                alert("❌ No active document found.");
+        document.addEventListener("DOMContentLoaded", function () {
+            if (typeof CSInterface === "undefined") {
+                alert("❌ CSInterface is NOT loaded.");
                 return;
             }
-            if(result === "error") return;// check for error
 
-            var values = result.split(",");
-            var selectedLayer = values[2];
-            if (!selectedLayer) return; 
+            var apiUrl = "https://jog-desktop.jog-joinourgame.com/generate_barcode.php";
+            var uploadUrl = "https://jog-desktop.jog-joinourgame.com/store_files.php";
+            var loginUrl = "https://jog-desktop.jog-joinourgame.com/login_adobe.php";
 
-            // alert("Selected layer is: " + selectedLayer);
+            const csInterface = new CSInterface();
 
-            var requestData = {
-                "file_name": values[0],
-                "number_of_pieces": values[1],
-            };
-
-            let barcodeData = await fetchWithErrorHandling(apiUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": token
-                },
-                body: JSON.stringify(requestData)
-            });
-            if(barcodeData['error'] != null){
-                alert((barcodeData['message']??"Error laoding data") + " Please try agian");
-                if(barcodeData['message'] === "Invalid session")
-                csInterface.evalScript('deleteToken()', async function (result) {});
-                return;
-            }
-             
-            let numberToSend = barcodeData.order_code;
-            let barcodes = barcodeData.barcodes.join(",");
-
-            // alert("✅ Barcodes Received: " + barcodes);
-
-            csInterface.evalScript('main("' + barcodes + '", "' + selectedLayer + '")', async function (result) {
-                if (result === "EvalScript error.") {
-                    alert("❌ evalScript Error: Check JSX file path or syntax!");
-                    return;
-                } 
-                if(result === "error") return;/// for error response
+            async function fetchWithErrorHandling(url, options) {
                 try {
-                    var codesItems = barcodes.split(",");
-                    var filePaths = result.split(",");
-                    var fileNames = codesItems.map(name => name + ".eps");
+                    let response = await fetch(url, options);
+                    let data = await response.json();
 
-                    var rawData = {
-                        "order_name": values[0],
-                        "file_paths": filePaths,
-                        "file_name": fileNames,
+                    // Check for invalid session and return immediately if detected
+                    if (data.status === "error" && data.message === "Invalid session") {
+                        // csInterface.evalScript('deleteToken()', async function (result) {})
+                        alert("❌ Error: " + data.message + "\nPlease login into desktop application");
+
+                        return null; // Stop execution
+                    }
+
+                    if (data.status === "error") {
+                        alert("❌ Error: " + data.message + "\nPlease try again.");
+                        return null; // Stop execution
+                    }
+
+                    return data;
+                } catch (error) {
+                    alert("❌ Network Error: " + error.message + "\nPlease check your connection and try again.");
+                    return null; // Stop execution
+                }
+            }
+
+            function generateBarcode(token) {
+                csInterface.evalScript('getDocName()', async function (result) {
+                    if (result === "error: No active document found") {
+                        alert("❌ No active document found.");
+                        return;
+                    }
+                    if (result === "error") return;// check for error
+
+                    var values = result.split(",");
+                    var selectedLayer = values[2];
+                    if (!selectedLayer) return;
+
+                    // alert("Selected layer is: " + selectedLayer);
+
+                    var requestData = {
+                        "file_name": values[0],
+                        "number_of_pieces": values[1],
                     };
 
-                    let uploadResponse = await fetchWithErrorHandling(uploadUrl, {
+                    let barcodeData = await fetchWithErrorHandling(apiUrl, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                             "Authorization": token
                         },
-                        body: JSON.stringify(rawData)
+                        body: JSON.stringify(requestData)
                     });
-
-                    if (!uploadResponse) {
-                        deleteFiles(filePaths);
-                        return; // Stop execution if error or invalid session
+                    if (barcodeData['error'] != null) {
+                        alert((barcodeData['message'] ?? "Error laoding data") + " Please try agian");
+                        if (barcodeData['message'] === "Invalid session")
+                            // csInterface.evalScript('deleteToken()', async function (result) {});
+                            return;
                     }
 
-                    alert("✅ Files have been sent to the server.");
-                } catch (e) {
-                    alert("❌ Error processing file: " + e.message);
-                }
-            });
-        });
-    }
+                    let numberToSend = barcodeData.order_code;
+                    let barcodes = barcodeData.barcodes.join(",");
 
-    function deleteFiles(filePaths) {
-        let removeFiles = filePaths.join(",");
-        let newFilesData = removeFiles.split("\\").join(">");
+                    // alert("✅ Barcodes Received: " + barcodes);
 
-        csInterface.evalScript('deleteFiles("' + newFilesData + '")', function (result) { });
-    }
+                    csInterface.evalScript('main("' + barcodes + '", "' + selectedLayer + '")', async function (result) {
+                        if (result === "EvalScript error.") {
+                            alert("❌ evalScript Error: Check JSX file path or syntax!");
+                            return;
+                        }
+                        if (result === "error") return;/// for error response
+                        try {
+                            var codesItems = barcodes.split(",");
+                            var filePaths = result.split(",");
+                            var fileNames = codesItems.map(name => name + ".eps");
 
-    function runIllustratorScript() {
-        //alert("Script started");
+                            var rawData = {
+                                "order_name": values[0],
+                                "file_paths": filePaths,
+                                "file_name": fileNames,
+                            };
 
-        csInterface.evalScript('userLogin()', async function (loginInfoData) {
-            var userInfo = loginInfoData.split(",");
+                            let uploadResponse = await fetchWithErrorHandling(uploadUrl, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": token
+                                },
+                                body: JSON.stringify(rawData)
+                            });
 
-            if (!userInfo || userInfo.length === 0) {
-                alert("No user info found.");
-                return;
-            }
+                            if (!uploadResponse) {
+                                deleteFiles(filePaths);
+                                return; // Stop execution if error or invalid session
+                            }
 
-            if (userInfo.length === 1) {
-                generateBarcode(userInfo[0]);
-            } else if (userInfo.length === 2) {
-                var userData = {
-                    "username": userInfo[0],
-                    "password": userInfo[1]
-                };
-
-                let loginResponse = await fetchWithErrorHandling(loginUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(userData)
+                            alert("✅ Files have been sent to the server.");
+                        } catch (e) {
+                            alert("❌ Error processing file: " + e.message);
+                        }
+                    });
                 });
-
-                if (!loginResponse) return; // Stop execution if error or invalid session
-
-                let session_token = loginResponse.session_token;
-                csInterface.evalScript('storeToken("' + session_token + '")', function () { });
-                generateBarcode(session_token);
             }
-        });
-    }
 
-    document.getElementById("generateBarcodeBtn").addEventListener("click", runIllustratorScript);
-});
+            function deleteFiles(filePaths) {
+                let removeFiles = filePaths.join(",");
+                let newFilesData = removeFiles.split("\\").join(">");
+
+                csInterface.evalScript('deleteFiles("' + newFilesData + '")', function (result) { });
+            }
+
+            function runIllustratorScript() {
+                //alert("Script started");
+
+                csInterface.evalScript('userLogin()', async function (loginInfoData) {
+                    alert("Raw data: " + loginInfoData); // show raw JSON string
+
+                    if (loginInfoData != null && loginInfoData !== "") {
+                        try {
+                            var tokenData = JSON.parse(loginInfoData); // parse string to object
+                            alert("Parsed data: " + JSON.stringify(tokenData)); // confirm structure
+
+                            var token = tokenData.session_token; // access session_token
+                            alert("Token: " + token);
+
+                            generateBarcode(token); // pass token to your function
+                        } catch (e) {
+                            alert("Error parsing loginInfoData: " + e.message);
+                        }
+                    } else {
+                        alert("No data received from userLogin()");
+                    }
+                });
+            }
+
+            document.getElementById("generateBarcodeBtn").addEventListener("click", runIllustratorScript);
+        });
     </script>
 </body>
 

@@ -587,7 +587,7 @@ function readToken() {
         if (sessionFile.open("r")) {
             var session_token = sessionFile.read();
             sessionFile.close();
-            alert(session_token);
+            // alert(session_token);
             return session_token;
         } else {
             // alert("Error: Unable to read session token.");

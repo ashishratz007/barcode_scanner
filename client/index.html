@@ -192,7 +192,7 @@
                         // csInterface.evalScript('deleteToken()', async function (result) {})
                         alert("❌ Error: " + data.message + "\nPlease login into desktop application");
 
-                        throw null; // Stop execution
+                        return null; // Stop execution
                     }
 
                     if (data.status === "error") {
@@ -297,7 +297,7 @@
 
                 csInterface.evalScript('userLogin()', async function (loginInfoData) {
                     // alert("Raw data: " + loginInfoData); // show raw JSON string
-
+                    alert(loginInfoData);
                     if (loginInfoData != null && loginInfoData !== "") {
                         try {
                             var tokenData = JSON.parse(loginInfoData); // parse string to object

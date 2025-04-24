@@ -296,15 +296,15 @@
                 //alert("Script started");
 
                 csInterface.evalScript('userLogin()', async function (loginInfoData) {
-                    alert("Raw data: " + loginInfoData); // show raw JSON string
+                    // alert("Raw data: " + loginInfoData); // show raw JSON string
 
                     if (loginInfoData != null && loginInfoData !== "") {
                         try {
                             var tokenData = JSON.parse(loginInfoData); // parse string to object
-                            alert("Parsed data: " + JSON.stringify(tokenData)); // confirm structure
+                            // alert("Parsed data: " + JSON.stringify(tokenData)); // confirm structure
 
                             var token = tokenData.session_token; // access session_token
-                            alert("Token: " + token);
+                            // alert("Token: " + token);
 
                             generateBarcode(token); // pass token to your function
                         } catch (e) {

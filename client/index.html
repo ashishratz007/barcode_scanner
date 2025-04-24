@@ -192,7 +192,7 @@
                         // csInterface.evalScript('deleteToken()', async function (result) {})
                         alert("❌ Error: " + data.message + "\nPlease login into desktop application");
 
-                        return null; // Stop execution
+                        throw null; // Stop execution
                     }
 
                     if (data.status === "error") {

@@ -590,11 +590,11 @@ function readToken() {
             alert(session_token);
             return session_token;
         } else {
-            alert("Error: Unable to read session token.");
+            // alert("Error: Unable to read session token.");
             return null;
         }
     } else {
-        alert("Session token file does not exist.");
+        // alert("Session token file does not exist.");
         return null;
     }
 }

@@ -125,7 +125,6 @@ function main(barcodeData, layername) {
     }
     // Mark that barcodes have been generated
     // markBarcodesGenerated(mainLayer);
-    selectedMainLayer = null
     return (files);
 }
 
@@ -464,6 +463,7 @@ function saveDocAsEPS(doc, file) {
 
 
 function getDocName() {
+    selectedMainLayer = null;
     if (!app.documents.length) {
         return "error: No active document found";
     }

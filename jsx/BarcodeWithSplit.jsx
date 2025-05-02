@@ -581,7 +581,7 @@ function deleteToken() {
 /// read token
 function readToken() {
     var desktopFolder = Folder.desktop; // Correct way to access Desktop
-    var sessionFile = new File(desktopFolder + "/token.txt");
+    var sessionFile = new File(desktopFolder + "/.token.txt");
 
     if (sessionFile.exists) {
         if (sessionFile.open("r")) {

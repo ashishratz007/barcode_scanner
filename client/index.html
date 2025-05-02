@@ -297,7 +297,8 @@
 
                 csInterface.evalScript('userLogin()', async function (loginInfoData) {
                     // alert("Raw data: " + loginInfoData); // show raw JSON string
-                    alert(loginInfoData);
+                    // alert(loginInfoData);
+                    if(loginInfoData == null) return;
                     if (loginInfoData != null && loginInfoData !== "") {
                         try {
                             var tokenData = JSON.parse(loginInfoData); // parse string to object

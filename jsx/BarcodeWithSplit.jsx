@@ -125,6 +125,7 @@ function main(barcodeData, layername) {
     }
     // Mark that barcodes have been generated
     // markBarcodesGenerated(mainLayer);
+    selectedMainLayer = null
     return (files);
 }
 

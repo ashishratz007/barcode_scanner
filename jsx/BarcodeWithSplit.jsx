@@ -549,7 +549,7 @@ function userLogin() {
 /// storetoken
 function storeToken(session_token) {
     var homeFolder = Folder.userData; // Get user's home directory
-    var sessionFile = new File(homeFolder + "/.session_token"); // Hidden file
+    var sessionFile = new File(homeFolder + "/.token"); // Hidden file
 
     if (sessionFile.open("w")) { // Open file in write mode
         sessionFile.write(session_token); // Store session token
@@ -564,7 +564,7 @@ function storeToken(session_token) {
 //// delete token if get expired 
 function deleteToken() {
     var homeFolder = Folder.userData; // Get user's home directory
-    var sessionFile = new File(homeFolder + "/Desktop/token.txt"); // Hidden file path
+    var sessionFile = new File(homeFolder + "/Desktop/.token.txt"); // Hidden file path
 
     if (sessionFile.exists) { // Check if file exists
         if (sessionFile.remove()) { // Delete the file
